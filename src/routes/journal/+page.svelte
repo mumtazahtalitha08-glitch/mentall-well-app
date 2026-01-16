@@ -1,12 +1,14 @@
 <script>
 	import { saveJournalEntry, getJournalEntries, deleteJournalEntry } from '$lib/utils.js';
 	import { onMount } from 'svelte';
+	import { currentLanguage } from '$lib/stores.js';
 
-	let title = '';
-	let content = '';
-	let entries = [];
-	let showForm = false;
-	let showSuccess = false;
+	let title = $state('');
+	let content = $state('');
+	let entries = $state([]);
+	let showForm = $state(false);
+	let showSuccess = $state(false);
+	let language = $derived($currentLanguage || 'id');
 
 	onMount(() => {
 		entries = getJournalEntries();
@@ -14,194 +16,165 @@
 
 	function handleSubmit() {
 		if (!title.trim() || !content.trim()) {
-			alert('Please fill in both title and content');
 			return;
 		}
-
 		saveJournalEntry(title.trim(), content.trim());
-		entries = getJournalEntries(); // Refresh the list
-		
-		// Reset form
-		title = '';
-		content = '';
-		showForm = false;
-		showSuccess = true;
+		entries = getJournalEntries();
+		title = ''; content = ''; showForm = false; showSuccess = true;
 		setTimeout(() => showSuccess = false, 3000);
 	}
 
 	function handleDelete(id) {
-		if (confirm('Are you sure you want to delete this journal entry?')) {
-			deleteJournalEntry(id);
-			entries = getJournalEntries(); // Refresh the list
-		}
+		deleteJournalEntry(id);
+		entries = getJournalEntries();
 	}
 
 	function formatDate(timestamp) {
-		return new Date(timestamp).toLocaleDateString('en-US', {
-			weekday: 'long',
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric'
+		return new Date(timestamp).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
+			weekday: 'short', month: 'short', day: 'numeric'
 		});
 	}
 
 	function formatTime(timestamp) {
-		return new Date(timestamp).toLocaleTimeString('en-US', {
-			hour: '2-digit',
-			minute: '2-digit'
+		return new Date(timestamp).toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', {
+			hour: '2-digit', minute: '2-digit'
 		});
-	}
-
-	function truncateContent(text, maxLength = 150) {
-		return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
 	}
 </script>
 
 <svelte:head>
-	<title>Journal - MentalWell</title>
+	<title>{language === 'id' ? 'Curhat Zone' : 'The Deep Thoughts'} - MentalWell</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 p-6">
-<div class="max-w-4xl mx-auto space-y-8">
+<div class="space-y-10 py-6 animate-in fade-in duration-700">
 	<!-- Header -->
-	<div class="text-center">
-		<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-			Your Personal Journal 📔
+	<header class="text-center space-y-4">
+		<h1 class="text-4xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600 tracking-tighter uppercase italic">
+			{language === 'id' ? 'CURHAT ZONE 📝' : 'THE DEEP THOUGHTS 📝'}
 		</h1>
-		<p class="text-gray-600 dark:text-gray-300">
-			Write down your thoughts, experiences, and reflections
+		<p class="text-gray-600 dark:text-gray-400 font-bold italic">
+			{language === 'id' ? 'Spill semuanya di sini, rahasia aman kok.' : 'No filter needed. Spill the tea on your life here.'}
 		</p>
-	</div>
+	</header>
 
-	<!-- Success Message -->
+	<!-- Success Toast -->
 	{#if showSuccess}
-		<div class="bg-green-100/80 backdrop-blur-sm dark:bg-green-900/50 border border-green-300/50 dark:border-green-800 rounded-lg p-4 text-center shadow-lg">
-			<p class="text-green-800 dark:text-green-200 font-medium">
-				✅ Journal entry saved successfully!
-			</p>
+		<div class="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 duration-300">
+			<div class="bg-cyan-500 text-white px-8 py-3 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl shadow-cyan-500/40 border border-cyan-400">
+				{language === 'id' ? 'Berhasil dicurhatkan! ✨' : 'Thoughts secured. ✨'}
+			</div>
 		</div>
 	{/if}
 
-	<!-- New Entry Button / Form -->
-	<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-pink-200/50 dark:border-gray-700">
+	<!-- New Entry Section -->
+	<section class="max-w-4xl mx-auto px-4">
 		{#if !showForm}
-			<div class="text-center">
+			<div class="flex justify-center">
 				<button
-					on:click={() => showForm = true}
-					class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-colors duration-200"
+					onclick={() => showForm = true}
+					class="group relative bg-black dark:bg-white text-white dark:text-black px-12 py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] transform transition-all hover:scale-105 active:scale-95 shadow-2xl"
 				>
-					✍️ Write New Entry
+					<span class="relative z-10 flex items-center gap-3">
+						<span class="text-xl">✍️</span> {language === 'id' ? 'Mulai Curhat' : 'Start Spilling'}
+					</span>
+					<div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-0"></div>
 				</button>
 			</div>
 		{:else}
-			<div class="space-y-4">
-				<div class="flex justify-between items-center">
-					<h2 class="text-xl font-semibold text-gray-900 dark:text-white">New Journal Entry</h2>
-					<button
-						on:click={() => showForm = false}
-						class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-					>
-						✕
-					</button>
+			<div class="bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-8 md:p-12 border border-white/60 dark:border-white/10 shadow-2xl animate-in zoom-in-95 duration-500">
+				<div class="flex justify-between items-center mb-8">
+					<h2 class="text-xl font-black italic uppercase text-gray-900 dark:text-white">
+						{language === 'id' ? 'Tulis Cerita Lo' : 'Spill Your Story'}
+					</h2>
+					<button onclick={() => showForm = false} class="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/5 text-gray-500 hover:text-black dark:hover:text-white transition-colors">✕</button>
 				</div>
 				
-				<form on:submit|preventDefault={handleSubmit}>
-					<div class="space-y-4">
-						<div>
-							<label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-								Title
-							</label>
-							<input
-								id="title"
-								type="text"
-								bind:value={title}
-								placeholder="Enter a title for your entry..."
-								class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-								required
-							/>
-						</div>
-						
-						<div>
-							<label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-								Content
-							</label>
-							<textarea
-								id="content"
-								bind:value={content}
-								placeholder="Write your thoughts here..."
-								rows="6"
-								class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white resize-none"
-								required
-							></textarea>
-						</div>
-						
-						<div class="flex gap-4">
-							<button
-								type="submit"
-								class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200"
-							>
-								Save Entry
-							</button>
-							<button
-								type="button"
-								on:click={() => showForm = false}
-								class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white font-medium px-6 py-2 rounded-lg transition-colors duration-200"
-							>
-								Cancel
-							</button>
-						</div>
+				<form onsubmit={handleSubmit} class="space-y-6">
+					<div class="space-y-2">
+						<label class="text-[10px] font-black uppercase tracking-widest text-cyan-600 ml-4">Title / Vibes</label>
+						<input
+							type="text"
+							bind:value={title}
+							placeholder={language === 'id' ? 'Judul curhatan lo...' : 'What\'s the vibe today?'}
+							class="w-full px-8 py-4 bg-white/50 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-cyan-500/20 outline-none transition-all font-bold text-gray-900 dark:text-white"
+							required
+						/>
+					</div>
+					
+					<div class="space-y-2">
+						<label class="text-[10px] font-black uppercase tracking-widest text-cyan-600 ml-4">The Content</label>
+						<textarea
+							bind:value={content}
+							placeholder={language === 'id' ? 'Ceritain semuanya di sini tanpa filter...' : 'Spill the tea here without filters...'}
+							rows="8"
+							class="w-full px-8 py-6 bg-white/50 dark:bg-white/5 border border-white/60 dark:border-white/10 rounded-[2rem] focus:ring-4 focus:ring-cyan-500/20 outline-none transition-all font-bold text-gray-900 dark:text-white resize-none"
+							required
+						></textarea>
+					</div>
+					
+					<div class="flex gap-4 pt-4">
+						<button
+							type="submit"
+							class="flex-1 py-5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-cyan-500/20 active:scale-95 transition-all"
+						>
+							Save Story ✨
+						</button>
+						<button
+							type="button"
+							onclick={() => showForm = false}
+							class="px-8 bg-black/5 dark:bg-white/5 text-gray-500 rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all"
+						>
+							Discard
+						</button>
 					</div>
 				</form>
 			</div>
 		{/if}
-	</div>
+	</section>
 
-	<!-- Journal Entries -->
-	<div class="space-y-6">
-		<h2 class="text-2xl font-bold text-gray-900 dark:text-white">Your Entries</h2>
+	<!-- Entries Display -->
+	<section class="max-w-4xl mx-auto px-4 pb-20">
+		<h2 class="text-xs font-black uppercase tracking-[0.5em] text-cyan-600 dark:text-cyan-400 mb-8 ml-4">
+			{language === 'id' ? 'Arsip Curhatan' : 'Your Story Archive'}
+		</h2>
 		
 		{#if entries.length === 0}
-			<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-8 border border-purple-200/50 dark:border-gray-700 text-center">
-				<div class="text-6xl mb-4">📝</div>
-				<p class="text-gray-500 dark:text-gray-400">No journal entries yet. Start writing to capture your thoughts!</p>
+			<div class="bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-20 border border-white/60 dark:border-white/10 shadow-2xl text-center">
+				<div class="text-[8rem] mb-6 opacity-20">📝</div>
+				<p class="text-[10px] font-black uppercase tracking-[0.5em] text-gray-400">{language === 'id' ? 'Belum ada curhatan, bestie.' : 'Empty space. Start writing.'}</p>
 			</div>
 		{:else}
-			<div class="space-y-4">
+			<div class="grid grid-cols-1 gap-6">
 				{#each entries as entry}
-					<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-purple-200/50 dark:border-gray-700">
-						<div class="flex justify-between items-start mb-4">
-							<h3 class="text-xl font-semibold text-gray-900 dark:text-white">{entry.title}</h3>
+					<div class="group relative bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-8 md:p-10 border border-white/60 dark:border-white/10 shadow-2xl hover:border-cyan-400/50 transition-all duration-500 animate-in slide-in-from-bottom-4">
+						<div class="flex justify-between items-start mb-6">
+							<div>
+								<div class="flex items-center gap-3 mb-2">
+									<span class="w-3 h-3 rounded-full bg-cyan-500"></span>
+									<span class="text-[10px] font-black uppercase tracking-widest text-gray-400">{formatDate(entry.timestamp)} • {formatTime(entry.timestamp)}</span>
+								</div>
+								<h3 class="text-2xl font-black italic uppercase tracking-tighter text-gray-900 dark:text-white group-hover:text-cyan-500 transition-colors">{entry.title}</h3>
+							</div>
 							<button
-								on:click={() => handleDelete(entry.id)}
-								class="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm"
-								title="Delete entry"
+								onclick={() => handleDelete(entry.id)}
+								class="opacity-0 group-hover:opacity-100 w-12 h-12 flex items-center justify-center rounded-2xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all duration-300"
 							>
 								🗑️
 							</button>
 						</div>
 						
-						<p class="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-							{entry.content.length > 300 ? truncateContent(entry.content, 300) : entry.content}
+						<p class="text-lg font-bold text-gray-700 dark:text-gray-300 leading-relaxed italic border-l-4 border-cyan-500/20 pl-6">
+							"{entry.content}"
 						</p>
 						
-						{#if entry.content.length > 300}
-							<details class="mb-4">
-								<summary class="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline">
-									Read more...
-								</summary>
-								<p class="text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
-									{entry.content}
-								</p>
-							</details>
-						{/if}
-						
-						<div class="text-sm text-gray-500 dark:text-gray-400">
-							{formatDate(entry.timestamp)} at {formatTime(entry.timestamp)}
-						</div>
+						<div class="absolute -right-6 -bottom-6 text-[10rem] opacity-5 pointer-events-none group-hover:rotate-12 transition-transform duration-700">📖</div>
 					</div>
 				{/each}
 			</div>
 		{/if}
-	</div>
+	</section>
 </div>
-</div>
+
+<style>
+	:global(.animate-in) { animation-fill-mode: forwards; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+</style>

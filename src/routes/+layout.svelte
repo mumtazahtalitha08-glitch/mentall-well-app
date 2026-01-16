@@ -27,26 +27,26 @@
 		currentLanguage.setLanguage(newLang);
 	}
 
-	// Translations for navigation
+	// Translations for navigation with Gen Z flavor
 	function getTranslation(key) {
 		const translations = {
 			en: {
-				home: 'Home',
-				moodTracker: 'Mood Tracker',
-				journal: 'Journal',
-				assessment: 'Self-Assessment',
-				tips: 'Tips',
-				darkMode: 'Toggle dark mode',
-				language: 'Switch to Indonesian'
+				home: 'Home 🏠',
+				moodTracker: 'Mood Vibe 🧬',
+				journal: 'Dear Diary 📝',
+				assessment: 'Vibe Check 🧠',
+				tips: 'Pro Tips 💡',
+				darkMode: 'Vibe Shift',
+				language: 'Switch to ID 🇮🇩'
 			},
 			id: {
-				home: 'Beranda',
-				moodTracker: 'Pelacak Mood',
-				journal: 'Jurnal',
-				assessment: 'Self-Assessment',
-				tips: 'Tips',
-				darkMode: 'Aktifkan mode gelap',
-				language: 'Ganti ke Bahasa Inggris'
+				home: 'Home 🏠',
+				moodTracker: 'Cek Mood 🧬',
+				journal: 'Curhat Zone 📝',
+				assessment: 'Vibe Check 🧠',
+				tips: 'Pro Tips 💡',
+				darkMode: 'Ganti Vibe',
+				language: 'Ganti ke EN 🇺🇸'
 			}
 		};
 		return translations[$currentLanguage]?.[key] || key;
@@ -54,184 +54,137 @@
 </script>
 
 <svelte:head>
-	<title>MentalWell</title>
+	<title>MentalWell | Gen Z Mental Health</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-200">
-	<!-- Navigation Header -->
-	<nav class="bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 shadow-lg border-b border-pink-200/50 dark:border-gray-700">
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-			<div class="flex justify-between items-center h-16">
-				<!-- Logo -->
+<div class="min-h-screen bg-gradient-to-br from-[#FFDEE9] via-[#B5FFFC] to-[#fbc2eb] dark:from-[#1a0b2e] dark:via-[#09090b] dark:to-[#17171e] transition-colors duration-700 font-sans selection:bg-purple-500 selection:text-white">
+	
+	<!-- Floating Navigation Bar (Glassmorphism) -->
+	<nav class="sticky top-4 z-50 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-none">
+		<div class="bg-white/40 dark:bg-black/40 backdrop-blur-2xl rounded-[2rem] border border-white/50 dark:border-white/10 shadow-2xl pointer-events-auto transition-all duration-300">
+			<div class="flex justify-between items-center h-16 px-6">
+				<!-- Logo with Vibe -->
 				<div class="flex items-center">
-					<a href="/" class="text-2xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
-						🧠 MentalWell
+					<a href="/" class="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-500 dark:from-cyan-400 dark:to-blue-500 tracking-tighter hover:scale-105 transition-transform">
+						🧠 MENTALWELL
 					</a>
 				</div>
 
-				<!-- Navigation Links -->
-				<div class="hidden md:flex items-center space-x-8">
-					<a 
-						href="/" 
-						class="{$page.url.pathname === '/' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'} px-3 py-2 text-sm font-medium transition-colors"
-					>
-						{getTranslation('home')}
-					</a>
-					<a 
-						href="/mood" 
-						class="{$page.url.pathname === '/mood' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'} px-3 py-2 text-sm font-medium transition-colors"
-					>
-						{getTranslation('moodTracker')}
-					</a>
-					<a 
-						href="/journal" 
-						class="{$page.url.pathname === '/journal' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'} px-3 py-2 text-sm font-medium transition-colors"
-					>
-						{getTranslation('journal')}
-					</a>
-					<a 
-						href="/assessment" 
-						class="{$page.url.pathname === '/assessment' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'} px-3 py-2 text-sm font-medium transition-colors"
-					>
-						{getTranslation('assessment')}
-					</a>
-					<a 
-						href="/tips" 
-						class="{$page.url.pathname === '/tips' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'} px-3 py-2 text-sm font-medium transition-colors"
-					>
-						{getTranslation('tips')}
-					</a>
+				<!-- Desktop Navigation (Hidden on small screens) -->
+				<div class="hidden lg:flex items-center space-x-1">
+					{#each ['home', 'moodTracker', 'journal', 'assessment', 'tips'] as link}
+						{@const path = link === 'home' ? '/' : `/${link.replace('Tracker', '').toLowerCase()}`}
+						<a 
+							href={path === '/mood' ? '/mood' : (path === '/journal' ? '/journal' : (path === '/assessment' ? '/assessment' : (path === '/tips' ? '/tips' : '/')))}
+							class="px-4 py-2 rounded-2xl text-sm font-bold transition-all duration-300
+								{ ($page.url.pathname === path || ($page.url.pathname === '/' && link === 'home')) 
+									? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30' 
+									: 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10' }"
+						>
+							{getTranslation(link)}
+						</a>
+					{/each}
 				</div>
 
 				<!-- Controls -->
-				<div class="flex items-center space-x-2">
-					
+				<div class="flex items-center space-x-3">
 					<!-- Language Toggle -->
 					<button 
-						onclick={() => toggleLanguage()} 
-						class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-medium"
-						title={getTranslation('language')}
+						onclick={toggleLanguage} 
+						class="px-3 py-1.5 rounded-xl bg-white/60 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-white/50 dark:border-white/10 hover:bg-white/80 dark:hover:bg-white/10 transition-all font-black text-[10px] tracking-widest uppercase"
 					>
-						🌍 {$currentLanguage === 'id' ? 'EN' : 'ID'}
+						{$currentLanguage === 'id' ? '🇺🇸 EN' : '🇮🇩 ID'}
 					</button>
 								
 					<!-- Dark Mode Toggle -->
 					<button 
 						onclick={() => darkMode.toggle()} 
-						class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-						title={getTranslation('darkMode')}
+						class="p-2.5 rounded-xl bg-white/60 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-white/50 dark:border-white/10 hover:bg-white/80 dark:hover:bg-white/10 transition-all shadow-sm"
 					>
-						{$darkMode ? '☀️' : '🌙'}
+						{$darkMode ? '✨' : '🌙'}
 					</button>
 				</div>
-			</div>
-		</div>
-
-		<!-- Mobile Navigation -->
-		<div class="md:hidden border-t border-pink-200/50 dark:border-gray-700">
-			<div class="px-2 pt-2 pb-3 space-y-1 bg-white/80 backdrop-blur-sm dark:bg-gray-800/80">
-				<!-- Mobile Language & Dark Mode Toggle -->
-				<div class="flex justify-between items-center px-3 py-2">
-					<button 
-						onclick={() => toggleLanguage()} 
-						class="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs font-medium"
-						title={getTranslation('language')}
-					>
-						🌍 {$currentLanguage === 'id' ? 'EN' : 'ID'}
-					</button>
-					<button 
-						onclick={() => darkMode.toggle()} 
-						class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-						title={getTranslation('darkMode')}
-					>
-						{$darkMode ? '☀️' : '🌙'}
-					</button>
-				</div>
-				
-				<a 
-					href="/" 
-					class="{$page.url.pathname === '/' ? 'bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} block px-3 py-2 rounded-md text-base font-medium transition-colors"
-				>
-					{getTranslation('home')}
-				</a>
-				<a 
-					href="/mood" 
-					class="{$page.url.pathname === '/mood' ? 'bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} block px-3 py-2 rounded-md text-base font-medium transition-colors"
-				>
-					{getTranslation('moodTracker')}
-				</a>
-				<a 
-					href="/journal" 
-					class="{$page.url.pathname === '/journal' ? 'bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} block px-3 py-2 rounded-md text-base font-medium transition-colors"
-				>
-					{getTranslation('journal')}
-				</a>
-				<a 
-					href="/assessment" 
-					class="{$page.url.pathname === '/assessment' ? 'bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} block px-3 py-2 rounded-md text-base font-medium transition-colors"
-				>
-					{getTranslation('assessment')}
-				</a>
-				<a 
-					href="/tips" 
-					class="{$page.url.pathname === '/tips' ? 'bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'} block px-3 py-2 rounded-md text-base font-medium transition-colors"
-				>
-					{getTranslation('tips')}
-				</a>
 			</div>
 		</div>
 	</nav>
 
-	<!-- Main Content -->
-	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-		{@render children?.()}
+	<!-- Main Content Area -->
+	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 min-h-[calc(100vh-200px)]">
+		<div class="animate-in fade-in duration-1000">
+			{@render children?.()}
+		</div>
 	</main>
 
-	<!-- Footer -->
-	<footer class="bg-white/80 backdrop-blur-sm dark:bg-gray-800/80 border-t border-pink-200/50 dark:border-gray-700 mt-8">
-		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-			<div class="md:flex md:items-center md:justify-between">
-				<div class="flex justify-center md:justify-start">
-					<div class="flex items-center">
-						<span class="text-2xl font-bold text-blue-600 dark:text-blue-400">🧠</span>
-						<span class="ml-2 text-xl font-bold text-gray-900 dark:text-white">MentalWell</span>
+	<!-- Footer with Gen Z Style -->
+	<footer class="mt-20 border-t border-white/30 dark:border-white/5 bg-white/20 dark:bg-black/20 backdrop-blur-md">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+				<!-- Brand Section -->
+				<div class="space-y-4">
+					<div class="flex items-center gap-2">
+						<span class="text-3xl">🧠</span>
+						<span class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic">MentalWell</span>
+					</div>
+					<p class="text-sm text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
+						{$currentLanguage === 'id' 
+							? 'Bestie kesehatan mental lo. Biar mental makin op dan ga gampang kena mental.' 
+							: 'Your mental health bestie. Stay based, stay balanced, stay op.'}
+					</p>
+				</div>
+
+				<!-- Quick Links -->
+				<div class="space-y-4">
+					<h4 class="text-xs font-black uppercase tracking-widest text-purple-600 dark:text-cyan-400">Navigasi</h4>
+					<div class="flex flex-col space-y-2">
+						{#each ['home', 'moodTracker', 'journal', 'assessment', 'tips'] as link}
+							<a href={link === 'home' ? '/' : `/${link.replace('Tracker', '').toLowerCase()}`} class="text-sm font-bold text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-cyan-400 transition-colors">
+								{getTranslation(link)}
+							</a>
+						{/each}
 					</div>
 				</div>
-				<div class="mt-4 md:mt-0 flex justify-center space-x-6">
-					<a href="/" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-						{getTranslation('home')}
-					</a>
-					<a href="/mood" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-						{getTranslation('moodTracker')}
-					</a>
-					<a href="/journal" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-						{getTranslation('journal')}
-					</a>
-					<a href="/assessment" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-						{getTranslation('assessment')}
-					</a>
-					<a href="/tips" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
-						{getTranslation('tips')}
-					</a>
+
+				<!-- Credits -->
+				<div class="lg:col-span-2 space-y-4">
+					<h4 class="text-xs font-black uppercase tracking-widest text-purple-600 dark:text-cyan-400">Created with ❤️</h4>
+					<p class="text-sm font-bold text-gray-800 dark:text-gray-200">
+						Created by <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500 font-black px-1">Talitha Mumtazah Rosadi</span>
+					</p>
+					<p class="text-[10px] uppercase font-black tracking-tighter text-gray-500 dark:text-gray-600">
+						MA KHA Wahid Hasyim Bangil
+					</p>
 				</div>
 			</div>
-			<div class="mt-4 pt-4 border-t border-pink-200/50 dark:border-gray-700 text-center">
-				<p class="text-sm text-gray-600 dark:text-gray-400">
-					{$currentLanguage === 'id' 
-						? '© 2023 MentalWell. Semua hak dilindungi. Aplikasi ini dimaksudkan untuk mendukung kesehatan mental dan bukan pengganti layanan kesehatan profesional.' 
-						: '© 2023 MentalWell. All rights reserved. This app is intended to support mental health and is not a substitute for professional healthcare services.'}
+
+			<!-- Legal / Disclaimer -->
+			<div class="mt-12 pt-8 border-t border-white/20 dark:border-white/5 text-center space-y-4">
+				<p class="text-[10px] text-gray-500 dark:text-gray-600 font-black uppercase tracking-[0.2em]">
+					&copy; 2026 MENTALWELL. ALL RIGHTS RESERVED. NO CAP.
 				</p>
-				<p class="mt-2 text-xs text-gray-500 dark:text-gray-500">
-					{$currentLanguage === 'id' 
-						? 'Jika Anda sedang mengalami krisis mental, segera hubungi layanan darurat atau profesional kesehatan mental di daerah Anda.' 
-						: 'If you are experiencing a mental health crisis, please contact emergency services or a mental health professional in your area immediately.'}
-				</p>
-				<p class="mt-2 text-xs text-gray-500 dark:text-gray-500">
-					{$currentLanguage === 'id' 
-						? 'Website dibuat oleh Talitha Mumtazah Rosadi - MA KHA Wahid Hasyim Bangil' 
-						: 'Website created by Talitha Mumtazah Rosadi - MA KHA Wahid Hasyim Bangil'}
+				<p class="text-xs text-gray-600 dark:text-gray-400 max-w-3xl mx-auto italic font-medium leading-relaxed">
+					"{$currentLanguage === 'id' 
+						? 'Aplikasi ini buat support kesehatan mental aja ya, bukan gantiin bantuan profesional. Kalo ngerasa butuh bantuan, buruan cari ahli. We care about you.' 
+						: 'This app is for mental health vibes and support, not a replacement for professional help. If things get heavy, talk to a pro. We care about you.'}"
 				</p>
 			</div>
 		</div>
 	</footer>
 </div>
+
+<style>
+	:global(html) {
+		scroll-behavior: smooth;
+	}
+	
+	:global(.animate-in) {
+		animation-fill-mode: forwards;
+		animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	@keyframes fade-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	.fade-in { animation: fade-in 0.5s ease-out; }
+</style>

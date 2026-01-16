@@ -1,469 +1,305 @@
 <script>
 	import { MOODS, saveMood, getMoods, getMoodStats, getMoodGraphData, getMoodInsights, getMoodColor } from '$lib/utils.js';
 	import { onMount } from 'svelte';
+	import { currentLanguage } from '$lib/stores.js';
 
-	let selectedMood = null;
-	let moods = [];
-	let stats = null;
-	let showSuccess = false;
-	let graphData = [];
-	let insights = [];
-	let graphPeriod = 'weekly';
-	let detailedGraphData = [];
+	// Gen Z Mood Labels override
+	const GENZ_MOODS = {
+		en: [
+			{ emoji: '😠', label: 'Cooked 💀', value: 1 },
+			{ emoji: '😢', label: 'Down Bad 📉', value: 2 },
+			{ emoji: '😐', label: 'Mid 😐', value: 3 },
+			{ emoji: '😊', label: 'Vibing ✨', value: 4 },
+			{ emoji: '😄', label: 'Peak Vibes 🚀', value: 5 }
+		],
+		id: [
+			{ emoji: '😠', label: 'Emosi Cuy 😠', value: 1 },
+			{ emoji: '😢', label: 'Sad Boy/Girl 😢', value: 2 },
+			{ emoji: '😐', label: 'B aja 😐', value: 3 },
+			{ emoji: '😊', label: 'Mantap ✨', value: 4 },
+			{ emoji: '😄', label: 'Gokil Parah 🚀', value: 5 }
+		]
+	};
+
+	let selectedMood = $state(null);
+	let moods = $state([]);
+	let stats = $state(null);
+	let showSuccess = $state(false);
+	let graphPeriod = $state('weekly');
+	let detailedGraphData = $state([]);
+	let insights = $state([]);
+	let language = $derived($currentLanguage || 'id');
+
+	const currentMoods = $derived(GENZ_MOODS[language] || GENZ_MOODS['id']);
 
 	onMount(() => {
+		refreshData();
+	});
+
+	function refreshData() {
 		moods = getMoods();
 		stats = getMoodStats();
-		graphData = getMoodGraphData(graphPeriod);
 		detailedGraphData = getDetailedMoodGraphData(graphPeriod);
 		insights = getMoodInsights();
-	});
+	}
 
 	function handleMoodSelect(mood) {
 		selectedMood = mood;
 		saveMood(mood);
-		moods = getMoods(); // Refresh the list
-		stats = getMoodStats(); // Refresh stats
-		graphData = getMoodGraphData(graphPeriod); // Refresh graph
-		detailedGraphData = getDetailedMoodGraphData(graphPeriod); // Refresh detailed graph
-		insights = getMoodInsights(); // Refresh insights
+		refreshData();
 		showSuccess = true;
 		setTimeout(() => showSuccess = false, 3000);
 	}
 
 	function toggleGraphPeriod() {
 		graphPeriod = graphPeriod === 'weekly' ? 'monthly' : 'weekly';
-		graphData = getMoodGraphData(graphPeriod);
 		detailedGraphData = getDetailedMoodGraphData(graphPeriod);
 	}
 
-	// New function to get more detailed graph data with trend analysis
 	function getDetailedMoodGraphData(period = 'weekly') {
 		if (typeof window === 'undefined') return [];
-		
-		const moods = getMoods();
+		const allMoods = getMoods();
 		const now = new Date();
-		let daysToCheck = 7;
-		
-		if (period === 'monthly') {
-			daysToCheck = 30;
-		}
-		
-		const startDate = new Date(now.getTime() - daysToCheck * 24 * 60 * 60 * 1000);
-		
-		// Create array with data for each day
+		let daysToCheck = period === 'monthly' ? 30 : 7;
 		const graphData = [];
 		for (let i = daysToCheck - 1; i >= 0; i--) {
 			const date = new Date(now);
 			date.setDate(date.getDate() - i);
-			
-			const dayMoods = moods.filter(mood => {
-				const moodDate = new Date(mood.timestamp);
-				return moodDate.toDateString() === date.toDateString();
-			});
-			
-			const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
-			const fullDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-			
+			const dayMoods = allMoods.filter(m => new Date(m.timestamp).toDateString() === date.toDateString());
+			const dayName = date.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { weekday: 'short' });
+			const fullDate = date.toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', { month: 'short', day: 'numeric' });
 			if (dayMoods.length > 0) {
-				const average = dayMoods.reduce((sum, mood) => sum + mood.mood.value, 0) / dayMoods.length;
-				const moodDistribution = {};
-				
-				// Calculate distribution of moods for this day
-				dayMoods.forEach(mood => {
-					moodDistribution[mood.mood.value] = (moodDistribution[mood.mood.value] || 0) + 1;
-				});
-				
-				graphData.push({
-					dayName,
-					fullDate,
-					value: Math.round(average * 10) / 10,
-					count: dayMoods.length,
-					distribution: moodDistribution,
-					trend: calculateTrend(graphData, dayMoods, i)
-				});
+				const average = dayMoods.reduce((sum, m) => sum + m.mood.value, 0) / dayMoods.length;
+				graphData.push({ dayName, fullDate, value: Math.round(average * 10) / 10, count: dayMoods.length });
 			} else {
-				graphData.push({
-					dayName,
-					fullDate,
-					value: null,
-					count: 0,
-					distribution: {},
-					trend: null
-				});
+				graphData.push({ dayName, fullDate, value: null, count: 0 });
 			}
 		}
-		
 		return graphData;
 	}
 
-	// Function to calculate trend for a day
-	function calculateTrend(graphData, dayMoods, index) {
-		if (index === 0 || graphData.length === 0) return null;
-		
-		const currentAvg = dayMoods.reduce((sum, mood) => sum + mood.mood.value, 0) / dayMoods.length;
-		const previousData = graphData[graphData.length - 1];
-		
-		if (previousData && previousData.value !== null) {
-			if (currentAvg > previousData.value + 0.5) return 'up';
-			if (currentAvg < previousData.value - 0.5) return 'down';
-			return 'stable';
-		}
-		
-		return null;
-	}
-
 	function formatDate(timestamp) {
-		return new Date(timestamp).toLocaleDateString('en-US', {
-			weekday: 'short',
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric'
+		return new Date(timestamp).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
+			weekday: 'short', month: 'short', day: 'numeric'
 		});
 	}
 
 	function formatTime(timestamp) {
-		return new Date(timestamp).toLocaleTimeString('en-US', {
-			hour: '2-digit',
-			minute: '2-digit'
+		return new Date(timestamp).toLocaleTimeString(language === 'id' ? 'id-ID' : 'en-US', {
+			hour: '2-digit', minute: '2-digit'
 		});
 	}
 
-	// Function to get overall mood trend
 	function getOverallTrend() {
 		if (detailedGraphData.length < 2) return null;
-		
-		const recentData = detailedGraphData.filter(d => d.value !== null);
-		if (recentData.length < 2) return null;
-		
-		const firstValue = recentData[0].value;
-		const lastValue = recentData[recentData.length - 1].value;
-		
-		if (lastValue > firstValue + 0.5) return 'improving';
-		if (lastValue < firstValue - 0.5) return 'declining';
+		const recent = detailedGraphData.filter(d => d.value !== null);
+		if (recent.length < 2) return null;
+		const first = recent[0].value;
+		const last = recent[recent.length - 1].value;
+		if (last > first + 0.5) return 'improving';
+		if (last < first - 0.5) return 'declining';
 		return 'stable';
-	}
-
-	// Function to get mood count for distribution chart
-	function getMoodCount(moodValue) {
-		return moods.filter(mood => mood.mood.value === moodValue).length;
-	}
-
-	// Function to get mood pattern insights
-	function getMoodPatterns() {
-		if (moods.length === 0) return [];
-		
-		const patterns = [];
-		
-		// Frequency of each mood
-		const moodCounts = {};
-		moods.forEach(mood => {
-			moodCounts[mood.mood.value] = (moodCounts[mood.mood.value] || 0) + 1;
-		});
-		
-		// Find most and least frequent moods
-		const moodValues = Object.keys(moodCounts);
-		if (moodValues.length > 0) {
-			const mostFrequent = moodValues.reduce((a, b) => moodCounts[a] > moodCounts[b] ? a : b);
-			const leastFrequent = moodValues.reduce((a, b) => moodCounts[a] < moodCounts[b] ? a : b);
-			
-			const mostFrequentMood = MOODS.find(m => m.value == mostFrequent);
-			const leastFrequentMood = MOODS.find(m => m.value == leastFrequent);
-			
-			if (mostFrequentMood) {
-				patterns.push({
-					type: 'most_frequent',
-					title: 'Most Common Mood',
-					value: mostFrequentMood.label,
-					count: moodCounts[mostFrequent],
-					emoji: mostFrequentMood.emoji,
-					percentage: Math.round((moodCounts[mostFrequent] / moods.length) * 100)
-				});
-			}
-			
-			if (leastFrequentMood) {
-				patterns.push({
-					type: 'least_frequent',
-					title: 'Least Common Mood',
-					value: leastFrequentMood.label,
-					count: moodCounts[leastFrequent],
-					emoji: leastFrequentMood.emoji,
-					percentage: Math.round((moodCounts[leastFrequent] / moods.length) * 100)
-				});
-			}
-		}
-		
-		return patterns;
 	}
 </script>
 
 <svelte:head>
-	<title>Mood Tracker - MentalWell</title>
+	<title>{language === 'id' ? 'Cek Vibe Mood' : 'Mood Vibe Check'} - MentalWell</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 p-6">
-<div class="max-w-4xl mx-auto space-y-8">
-	<!-- Header ---->
-	<div class="text-center">
-		<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-			How are you feeling today? 🌟
+<div class="space-y-10 py-6 animate-in fade-in duration-700">
+	<!-- Header -->
+	<header class="text-center space-y-4">
+		<h1 class="text-4xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-violet-600 tracking-tighter uppercase italic">
+			{language === 'id' ? 'VIBE CHECK HARI INI 🌟' : 'DAILY VIBE CHECK 🌟'}
 		</h1>
-		<p class="text-gray-600 dark:text-gray-300">
-			Select your current mood to track your emotional well-being
+		<p class="text-gray-600 dark:text-gray-400 font-bold italic">
+			{language === 'id' ? 'Gimana kondisi lo hari ini? Jangan di-gatekeep ya.' : 'How\'s your energy today? No gatekeeping allowed.'}
 		</p>
-	</div>
+	</header>
 
-	<!-- Success Message -->
+	<!-- Success Toast -->
 	{#if showSuccess}
-		<div class="bg-green-100/80 backdrop-blur-sm dark:bg-green-900/50 border border-green-300/50 dark:border-green-800 rounded-lg p-4 text-center shadow-lg">
-			<p class="text-green-800 dark:text-green-200 font-medium">
-				✅ Mood recorded successfully! Keep tracking your journey.
-			</p>
+		<div class="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4 duration-300">
+			<div class="bg-emerald-500 text-white px-8 py-3 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl shadow-emerald-500/40 border border-emerald-400">
+				{language === 'id' ? 'Vibe lo udah kecatat! ✨' : 'Vibe recorded! Stay slaying. ✨'}
+			</div>
 		</div>
 	{/if}
 
-	<!-- Mood Selection -->
-	<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-pink-200/50 dark:border-gray-700">
-		<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
-			Select Your Mood
-		</h2>
-		<div class="grid grid-cols-5 gap-4">
-			{#each MOODS as mood}
+	<!-- Mood Selection Grid -->
+	<section class="bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-8 md:p-12 border border-white/60 dark:border-white/10 shadow-2xl max-w-4xl mx-auto relative overflow-hidden">
+		<div class="absolute -right-20 -top-20 text-[15rem] opacity-5 pointer-events-none">✨</div>
+		
+		<h2 class="text-xs font-black uppercase tracking-[0.3em] text-pink-600 dark:text-pink-400 mb-8 text-center">{language === 'id' ? 'Pilih Vibe Lo' : 'Pick Your Vibe'}</h2>
+		
+		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 relative z-10">
+			{#each currentMoods as mood}
 				<button
 					onclick={() => handleMoodSelect(mood)}
-					class="p-4 rounded-lg border-2 transition-all duration-200 hover:scale-105 {selectedMood?.emoji === mood.emoji ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/50' : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'}"
+					class="group relative p-6 rounded-[2rem] border-2 transition-all duration-300 transform active:scale-95
+						{selectedMood?.value === mood.value 
+							? 'bg-gradient-to-br from-pink-500 to-violet-600 text-white border-pink-400 shadow-xl scale-105' 
+							: 'bg-white/60 dark:bg-white/5 border-white/50 dark:border-white/10 hover:border-pink-300 hover:bg-white/80 dark:hover:bg-white/10'}"
 				>
-					<div class="text-4xl mb-2">{mood.emoji}</div>
-					<div class="text-sm font-medium text-gray-900 dark:text-white">{mood.label}</div>
+					<div class="text-5xl mb-4 transition-transform group-hover:scale-125 duration-500">{mood.emoji}</div>
+					<div class="text-xs font-black uppercase tracking-tighter">{mood.label}</div>
+					
+					{#if selectedMood?.value === mood.value}
+						<div class="absolute -top-2 -right-2 bg-white text-pink-600 rounded-full p-1 shadow-lg">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+							</svg>
+						</div>
+					{/if}
 				</button>
 			{/each}
 		</div>
-	</div>
+	</section>
 
-	<!-- Stats Overview -->
-	{#if stats}
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-			<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-pink-200/50 dark:border-gray-700">
-				<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Total Entries</h3>
-				<p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</p>
+	<!-- Stats & Trends Container -->
+	<div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6">
+		<!-- Quick Stats Bento -->
+		{#if stats}
+			<div class="md:col-span-4 space-y-6">
+				<div class="bg-gradient-to-br from-blue-500 to-cyan-500 p-8 rounded-[2.5rem] text-white shadow-xl shadow-blue-500/20 relative overflow-hidden group">
+					<div class="absolute -right-4 -bottom-4 text-6xl opacity-20 transition-transform group-hover:scale-150 duration-700">✍️</div>
+					<p class="text-[10px] font-black uppercase tracking-widest opacity-80">Total Vibe Checks</p>
+					<h3 class="text-5xl font-black italic mt-2">{stats.total}</h3>
+				</div>
+				<div class="bg-gradient-to-br from-emerald-500 to-teal-500 p-8 rounded-[2.5rem] text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden group">
+					<div class="absolute -right-4 -bottom-4 text-6xl opacity-20 transition-transform group-hover:scale-150 duration-700">🔥</div>
+					<p class="text-[10px] font-black uppercase tracking-widest opacity-80">This Week Grind</p>
+					<h3 class="text-5xl font-black italic mt-2">{stats.last7Days}</h3>
+				</div>
+				<div class="bg-gradient-to-br from-violet-500 to-fuchsia-500 p-8 rounded-[2.5rem] text-white shadow-xl shadow-violet-500/20 relative overflow-hidden group">
+					<div class="absolute -right-4 -bottom-4 text-6xl opacity-20 transition-transform group-hover:scale-150 duration-700">📊</div>
+					<p class="text-[10px] font-black uppercase tracking-widest opacity-80">Vibe Level AVG</p>
+					<h3 class="text-5xl font-black italic mt-2">{stats.averageLastWeek}<span class="text-xl not-italic opacity-60">/5</span></h3>
+				</div>
 			</div>
-			<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-purple-200/50 dark:border-gray-700">
-				<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">This Week</h3>
-				<p class="text-3xl font-bold text-green-600 dark:text-green-400">{stats.last7Days}</p>
-			</div>
-			<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-indigo-200/50 dark:border-gray-700">
-				<h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Weekly Average</h3>
-				<p class="text-3xl font-bold text-purple-600 dark:text-purple-400">{stats.averageLastWeek}/5</p>
-			</div>
-		</div>
-	{/if}
+		{/if}
 
-	<!-- Enhanced Mood Graph with Trends -->
-	{#if detailedGraphData.length > 0}
-		<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-purple-200/50 dark:border-gray-700">
-			<div class="flex justify-between items-center mb-6">
-				<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Mood Trends & Patterns</h2>
-				<button
-					onclick={() => toggleGraphPeriod()}
-					class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
-				>
-					{graphPeriod === 'weekly' ? '📊 Switch to Monthly' : '📅 Switch to Weekly'}
-				</button>
-			</div>
-			
-			<div class="mb-4">
-				<p class="text-sm text-gray-600 dark:text-gray-300">
-					{graphPeriod === 'weekly' ? 'Last 7 days' : 'Last 30 days'} mood pattern
-				</p>
-			</div>
-			
-			<!-- Trend Summary -->
-			{#if getOverallTrend()}
-				<div class="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-					<div class="flex items-center">
-						<div class="text-2xl mr-3">
-							{getOverallTrend() === 'improving' ? '📈' : getOverallTrend() === 'declining' ? '📉' : '➡️'}
+		<!-- Charts & Insights -->
+		<div class="md:col-span-8 space-y-6">
+			<section class="bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-8 border border-white/60 dark:border-white/10 shadow-2xl">
+				<div class="flex justify-between items-center mb-10">
+					<h2 class="text-xl font-black italic uppercase tracking-tighter text-gray-900 dark:text-white">
+						{language === 'id' ? 'Tren Vibe Lo' : 'Vibe Analytics'}
+					</h2>
+					<button
+						onclick={toggleGraphPeriod}
+						class="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
+					>
+						{graphPeriod === 'weekly' ? (language === 'id' ? 'Lihat Bulanan' : 'Switch to Monthly') : (language === 'id' ? 'Lihat Mingguan' : 'Switch to Weekly')}
+					</button>
+				</div>
+
+				<!-- Trend Banner -->
+				{#if getOverallTrend()}
+					<div class="mb-8 p-6 rounded-3xl bg-white/40 dark:bg-white/5 border border-white/60 dark:border-white/5 flex items-center gap-6">
+						<div class="text-4xl">
+							{getOverallTrend() === 'improving' ? '🚀' : getOverallTrend() === 'declining' ? '🆘' : '💎'}
 						</div>
 						<div>
-							<h3 class="font-semibold text-gray-900 dark:text-white">
-								{getOverallTrend() === 'improving' ? 'Improving Trend' : 
-								 getOverallTrend() === 'declining' ? 'Declining Trend' : 'Stable Trend'}
-							</h3>
-							<p class="text-sm text-gray-600 dark:text-gray-300">
-								{getOverallTrend() === 'improving' ? 'Your mood has been improving over this period' : 
-								 getOverallTrend() === 'declining' ? 'Your mood has been declining over this period' : 
-								 'Your mood has remained relatively stable'}
+							<h4 class="font-black text-sm uppercase tracking-tighter text-gray-900 dark:text-white">
+								{getOverallTrend() === 'improving' ? (language === 'id' ? 'STOKS MENINGKAT!' : 'VIBES ARE UP!') : 
+								 getOverallTrend() === 'declining' ? (language === 'id' ? 'Lagi Down Bad...' : 'Major Skill Issue...') : 
+								 (language === 'id' ? 'Vibe Stabil' : 'Steady Vibes')}
+							</h4>
+							<p class="text-xs text-gray-600 dark:text-gray-400 font-bold">
+								{getOverallTrend() === 'improving' ? (language === 'id' ? 'Lo lagi on fire banget belakangan ini!' : 'You\'re literally slaying right now.') : 
+								 getOverallTrend() === 'declining' ? (language === 'id' ? 'Gpp kok lagi capek, lo butuh self-care.' : 'It\'s okay to be cooked sometimes. Take a break.') : 
+								 (language === 'id' ? 'Vibe lo terjaga banget, no cap.' : 'Your energy is consistent, stay gold.')}
 							</p>
 						</div>
 					</div>
-				</div>
-			{/if}
-			
-			<!-- Detailed Bar Chart -->
-			<div class="space-y-4 mb-6">
-				{#each detailedGraphData as data}
-					<div class="flex items-center space-x-3">
-						<div class="w-16 text-xs text-gray-600 dark:text-gray-300 font-medium">
-							<div>{data.dayName}</div>
-							<div class="text-[10px] text-gray-500">{data.fullDate}</div>
-						</div>
-						<div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-10 flex items-center relative">
-							{#if data.value !== null}
-								<div 
-									class="h-10 rounded-full flex items-center justify-center text-white text-sm font-medium transition-all duration-300 flex items-center"
-									style="width: {(data.value / 5) * 100}%; background-color: {getMoodColor(Math.round(data.value))}"
-								>
-									<span class="ml-2">{data.value.toFixed(1)}</span>
-									{#if data.trend === 'up'}
-										<span class="ml-1 text-xs">↗️</span>
-									{:else if data.trend === 'down'}
-										<span class="ml-1 text-xs">↘️</span>
-									{/if}
-								</div>
-								<div class="absolute right-2 text-xs text-gray-700 dark:text-gray-300">
-									{data.count} entries
-								</div>
-							{:else}
-								<span class="text-gray-500 dark:text-gray-400 text-sm ml-3">No data</span>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-			
-			<!-- Mood Distribution Visualization -->
-			<div class="mt-8">
-				<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Mood Distribution</h3>
-				<div class="flex items-end h-20 space-x-1">
-					{#each MOODS as mood}
-						{@const moodCount = getMoodCount(mood.value)}
-						<div class="flex flex-col items-center flex-1">
-							<div 
-								class="w-full rounded-t transition-all duration-300"
-								style="height: {moodCount > 0 ? (moodCount / moods.length) * 100 : 0}%; background-color: {getMoodColor(mood.value)}"
-							></div>
-							<div class="text-xs mt-1 text-gray-600 dark:text-gray-300">{mood.emoji}</div>
-							<div class="text-xs text-gray-500">{moodCount}</div>
+				{/if}
+
+				<!-- Visual Bars -->
+				<div class="space-y-4">
+					{#each detailedGraphData as data}
+						<div class="flex items-center gap-4 group">
+							<div class="w-12 text-[10px] font-black uppercase text-gray-500">
+								{data.dayName}
+							</div>
+							<div class="flex-1 h-8 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden relative border border-white/20">
+								{#if data.value !== null}
+									<div 
+										class="absolute inset-y-0 left-0 bg-gradient-to-r from-pink-500 to-violet-600 transition-all duration-1000 flex items-center justify-end px-4 group-hover:brightness-110"
+										style="width: {(data.value / 5) * 100}%"
+									>
+										<span class="text-[10px] font-black text-white italic drop-shadow-md">{data.value}</span>
+									</div>
+								{:else}
+									<div class="w-full h-full flex items-center px-4">
+										<span class="text-[8px] font-black text-gray-400 uppercase italic">No Data 📉</span>
+									</div>
+								{/if}
+							</div>
 						</div>
 					{/each}
 				</div>
-			</div>
-			
-			<!-- Legend -->
-			<div class="mt-6 flex flex-wrap gap-4 text-xs">
-				<div class="flex items-center space-x-2">
-					<div class="w-3 h-3 rounded-full" style="background-color: {getMoodColor(5)}"></div>
-					<span class="text-gray-600 dark:text-gray-300">Very Happy (5)</span>
-				</div>
-				<div class="flex items-center space-x-2">
-					<div class="w-3 h-3 rounded-full" style="background-color: {getMoodColor(4)}"></div>
-					<span class="text-gray-600 dark:text-gray-300">Happy (4)</span>
-				</div>
-				<div class="flex items-center space-x-2">
-					<div class="w-3 h-3 rounded-full" style="background-color: {getMoodColor(3)}"></div>
-					<span class="text-gray-600 dark:text-gray-300">Neutral (3)</span>
-				</div>
-				<div class="flex items-center space-x-2">
-					<div class="w-3 h-3 rounded-full" style="background-color: {getMoodColor(2)}"></div>
-					<span class="text-gray-600 dark:text-gray-300">Sad (2)</span>
-				</div>
-				<div class="flex items-center space-x-2">
-					<div class="w-3 h-3 rounded-full" style="background-color: {getMoodColor(1)}"></div>
-					<span class="text-gray-600 dark:text-gray-300">Angry (1)</span>
-				</div>
-			</div>
-		</div>
-	{/if}
+			</section>
 
-	<!-- Mood Patterns Summary -->
-	{#if getMoodPatterns().length > 0}
-		<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-indigo-200/50 dark:border-gray-700">
-			<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Mood Patterns Summary</h2>
-			
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				{#each getMoodPatterns() as pattern}
-					<div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-						<div class="flex items-center justify-between">
-							<div class="flex items-center">
-								<span class="text-2xl mr-3">{pattern.emoji}</span>
-								<div>
-									<h3 class="font-medium text-gray-900 dark:text-white">{pattern.title}</h3>
-									<p class="text-sm text-gray-600 dark:text-gray-300">{pattern.value}</p>
+			<!-- Insights Card -->
+			{#if insights.length > 0}
+				<section class="bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-8 border border-white/60 dark:border-white/10 shadow-2xl">
+					<h2 class="text-xl font-black italic uppercase tracking-tighter text-gray-900 dark:text-white mb-6">🧠 Vibe Insights</h2>
+					<div class="space-y-4">
+						{#each insights as insight}
+							<div class="p-6 rounded-3xl bg-white/50 dark:bg-white/5 border border-white relative overflow-hidden flex items-center gap-4">
+								<div class="text-3xl relative z-10">{insight.icon}</div>
+								<div class="relative z-10">
+									<h4 class="font-black text-xs uppercase tracking-tight text-gray-900 dark:text-white mb-1">{insight.title}</h4>
+									<p class="text-xs text-gray-600 dark:text-gray-400 font-bold leading-tight">{insight.message}</p>
 								</div>
 							</div>
-							<div class="text-right">
-								<div class="text-lg font-bold text-gray-900 dark:text-white">{pattern.percentage}%</div>
-								<div class="text-xs text-gray-500">({pattern.count} times)</div>
-							</div>
-						</div>
+						{/each}
 					</div>
-				{/each}
-			</div>
+				</section>
+			{/if}
 		</div>
-	{/if}
+	</div>
 
-	<!-- Mood Insights -->
-	{#if insights.length > 0}
-		<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-indigo-200/50 dark:border-gray-700">
-			<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center">
-				🧠 Your Mood Insights
-			</h2>
-			
-			<div class="space-y-4">
-				{#each insights as insight}
-					<div class="p-4 rounded-lg {insight.type === 'positive' ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'}">
-						<div class="flex items-start space-x-3">
-							<div class="text-2xl">{insight.icon}</div>
-							<div>
-								<h3 class="font-medium {insight.type === 'positive' ? 'text-green-800 dark:text-green-200' : 'text-yellow-800 dark:text-yellow-200'} mb-1">
-									{insight.title}
-								</h3>
-								<p class="text-sm {insight.type === 'positive' ? 'text-green-700 dark:text-green-300' : 'text-yellow-700 dark:text-yellow-300'}">
-									{insight.message}
-								</p>
-							</div>
-						</div>
-					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
+	<!-- History Table - Premium List -->
+	<section class="max-w-4xl mx-auto bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-8 md:p-12 border border-white/60 dark:border-white/10 shadow-2xl relative overflow-hidden">
+		<h2 class="text-xl font-black italic uppercase tracking-tighter text-gray-900 dark:text-white mb-8">
+			{language === 'id' ? 'Riwayat Vibe' : 'Vibe History Archive'}
+		</h2>
 
-	<!-- Mood History -->
-	<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-purple-200/50 dark:border-gray-700">
-		<h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Mood History</h2>
-		
 		{#if moods.length === 0}
-			<div class="text-center py-8">
-				<div class="text-6xl mb-4">📊</div>
-				<p class="text-gray-500 dark:text-gray-400">No mood entries yet. Select your mood above to get started!</p>
+			<div class="text-center py-20 opacity-30">
+				<div class="text-[10rem] mb-4">👻</div>
+				<p class="text-xs font-black uppercase tracking-[0.5em]">{language === 'id' ? 'Kosong Melompong' : 'Ghost Town'}</p>
 			</div>
 		{:else}
-			<div class="space-y-4 max-h-96 overflow-y-auto">
-				{#each moods.slice(0, 20) as mood}
-					<div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-						<div class="flex items-center space-x-4">
-							<div class="text-2xl">{mood.mood.emoji}</div>
+			<div class="space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+				{#each moods.slice(0, 50) as m}
+					<div class="group flex items-center justify-between p-6 bg-white/50 dark:bg-white/5 rounded-3xl border border-white hover:border-pink-400/50 transition-all duration-300">
+						<div class="flex items-center gap-6">
+							<div class="text-4xl group-hover:scale-125 transition-transform duration-500">{m.mood.emoji}</div>
 							<div>
-								<p class="font-medium text-gray-900 dark:text-white">{mood.mood.label}</p>
-								<p class="text-sm text-gray-500 dark:text-gray-400">
-									{formatDate(mood.timestamp)} at {formatTime(mood.timestamp)}
-								</p>
+								<div class="text-xs font-black uppercase tracking-tighter text-gray-900 dark:text-white">
+									{GENZ_MOODS[language]?.find(gm => gm.value === m.mood.value)?.label || m.mood.label}
+								</div>
+								<div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+									{formatDate(m.timestamp)} • {formatTime(m.timestamp)}
+								</div>
 							</div>
 						</div>
-						<div class="text-right">
-							<div class="text-lg font-bold text-gray-900 dark:text-white">{mood.mood.value}/5</div>
+						<div class="px-4 py-2 bg-black dark:bg-white/10 rounded-xl text-white font-black italic text-sm">
+							{m.mood.value}/5
 						</div>
 					</div>
 				{/each}
 			</div>
-			
-			{#if moods.length > 20}
-				<p class="text-center text-gray-500 dark:text-gray-400 mt-4 text-sm">
-					Showing latest 20 entries of {moods.length} total
-				</p>
-			{/if}
 		{/if}
-	</div>
+	</section>
 </div>
-</div>
+
+<style>
+	:global(.animate-in) { animation-fill-mode: forwards; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+	.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+	.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+	.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+</style>

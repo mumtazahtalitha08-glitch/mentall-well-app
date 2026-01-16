@@ -1,108 +1,91 @@
 <script>
-	import { onMount } from 'svelte';
 	import { currentLanguage } from '$lib/stores.js';
 	import { goto } from '$app/navigation';
 
-	// Assessment data
+	// Assessment data (Gen Z Glow Up Edition 💅)
 	const assessments = {
 		en: [
 			{
 				id: 'anxiety',
-				title: 'Anxiety Screening',
-				description: 'A brief assessment to detect symptoms of anxiety',
+				title: 'Anxiety Vibe 😰',
+				description: 'Feeling a bit too "extra" or shaky? Check your anxiety levels here.',
 				icon: '😰'
 			},
 			{
 				id: 'depression',
-				title: 'Depression Screening',
-				description: 'A brief assessment to detect symptoms of depression',
+				title: 'Mood Drop 😔',
+				description: 'Is it just a bad day or a whole mood? Let\'s check for depression symptoms.',
 				icon: '😔'
 			},
 			{
 				id: 'burnout',
-				title: 'Burnout Assessment',
-				description: 'A brief assessment to detect symptoms of burnout',
+				title: 'Burnout Alert 🔥',
+				description: 'Feeling cooked? See if you\'re hitting the burnout wall.',
 				icon: '🔥'
 			},
 			{
 				id: 'stress',
-				title: 'Stress Assessment',
-				description: 'A brief assessment to detect symptoms of stress',
+				title: 'Stress Level 💥',
+				description: 'A brief check to see if your stress is hitting 💯.',
 				icon: '💥'
 			},
 			{
 				id: 'stress_depression',
-				title: 'Stress & Depression Check',
-				description: 'A combined assessment to detect symptoms of stress and depression',
+				title: 'Dual Check 🌿',
+				description: 'The ultimate vibe check for both Stress & Depression. Stay balanced.',
 				icon: '🌿'
 			}
 		],
 		id: [
 			{
 				id: 'anxiety',
-				title: 'Tes Kecemasan',
-				description: 'Tes singkat untuk mendeteksi gejala kecemasan',
+				title: 'Cek Kecemasan 😰',
+				description: 'Lagi ngerasa "extra" cemas atau gemeteran? Cek level lo di sini.',
 				icon: '😰'
 			},
 			{
 				id: 'depression',
-				title: 'Tes Depresi',
-				description: 'Tes singkat untuk mendeteksi gejala depresi',
+				title: 'Mood Drop 😔',
+				description: 'Cuma hari yang buruk atau emang gejalanya? Cek di sini yuk.',
 				icon: '😔'
 			},
 			{
 				id: 'burnout',
-				title: 'Tes Burnout',
-				description: 'Tes singkat untuk mendeteksi gejala burnout',
+				title: 'Burnout Alert 🔥',
+				description: 'Ngerasa "cooked" banget? Cek apakah lo udah masuk fase burnout.',
 				icon: '🔥'
 			},
 			{
 				id: 'stress',
-				title: 'Tes Stres',
-				description: 'Tes singkat untuk mendeteksi gejala stres',
+				title: 'Stress Level 💥',
+				description: 'Tes singkat biar tau apakah stres lo udah mencapai 💯.',
 				icon: '💥'
 			},
 			{
 				id: 'stress_depression',
-				title: 'Tes Stres & Depresi',
-				description: 'Tes gabungan untuk mendeteksi gejala stres dan depresi',
+				title: 'Cek Dobel 🌿',
+				description: 'Vibe check gabungan buat Stres & Depresi. Stay balanced, bestie.',
 				icon: '🌿'
 			}
 		]
 	};
 
-	// State variables
-	let showHistory = false;
-	let assessmentHistory = [];
-
-	// Get current language assessments
-	let language = 'id'; // Default to Indonesian
-	
-	$effect(() => {
-		console.log('Current language from store:', $currentLanguage);
-		language = $currentLanguage || 'id';
-		console.log('Language variable set to:', language);
-	});
+	// State variables (Svelte 5 Runes)
+	let showHistory = $state(false);
+	let assessmentHistory = $state([]);
+	let language = $derived($currentLanguage || 'id');
 
 	function getAssessments() {
-		console.log('Getting assessments for language:', language);
-		console.log('Available assessments:', assessments);
-		const result = assessments[language] || assessments['id'];
-		console.log('Returning assessments:', result);
-		return result;
+		return assessments[language] || assessments['id'];
 	}
 
 	function startAssessment(assessment) {
-		console.log('Starting assessment:', assessment);
-		// Navigate to the specific assessment page
 		goto(`/assessment/${assessment.id}`);
 	}
 
 	function toggleHistory() {
 		showHistory = !showHistory;
-		if (showHistory) {
-			loadAssessmentHistory();
-		}
+		if (showHistory) { loadAssessmentHistory(); }
 	}
 
 	function loadAssessmentHistory() {
@@ -114,8 +97,8 @@
 
 	function clearHistory() {
 		if (typeof window !== 'undefined' && confirm(language === 'id' ? 
-			'Apakah Anda yakin ingin menghapus riwayat tes?' : 
-			'Are you sure you want to clear your test history?')) {
+			'Beneran mau hapus riwayat? No takebacks ya!' : 
+			'Are you sure you want to clear your history? No takebacks!')) {
 			assessmentHistory = [];
 			localStorage.removeItem('mentalwell_assessment_history');
 		}
@@ -123,131 +106,177 @@
 
 	function formatDate(timestamp) {
 		return new Date(timestamp).toLocaleDateString(language === 'id' ? 'id-ID' : 'en-US', {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
+			year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
 		});
+	}
+
+	function getTranslation(key) {
+		const translations = {
+			en: {
+				title: 'The Vibe Check Zone 🧠',
+				subtitle: 'Science-backed tests to see if you\'re actually chill or just pretending. No gatekeeping.',
+				select: 'Pick Your Test',
+				history: 'My Track Record',
+				back: 'Go Back',
+				clear: 'Clear Vibe History',
+				empty: 'No vibes recorded yet. Go take a test, bestie!',
+				infoTitle: 'Real Talk 🗣️',
+				infoText: 'These tests are for educational vibes only. If you\'re really struggling, call a pro ASAP. You matter!'
+			},
+			id: {
+				title: 'Vibe Check Zone 🧠',
+				subtitle: 'Tes berbasis sains biar tau lo beneran chill atau cuma pura-pura. No gatekeeping.',
+				select: 'Pilih Tes Lo',
+				history: 'Track Record Gue',
+				back: 'Balik Lagi',
+				clear: 'Hapus Jejak Vibe',
+				empty: 'Belum ada vibe yang tercatat. Buruan tes, bestie!',
+				infoTitle: 'Real Talk 🗣️',
+				infoText: 'Tes ini buat edukasi aja ya, bukan gantiin bantuan profesional. Kalo lo ngerasa berat banget, buruan cari ahli. Lo berharga!'
+			}
+		};
+		return translations[language]?.[key] || key;
 	}
 </script>
 
 <svelte:head>
-	<title>{language === 'id' ? 'Tes Psikologi - MentalWell' : 'Psychological Tests - MentalWell'}</title>
+	<title>{getTranslation('title')} - MentalWell</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-indigo-100 p-6">
-	<div class="max-w-4xl mx-auto space-y-6">
-		<!-- Header -->
-		<div class="text-center">
-			<h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-				{language === 'id' ? 'Tes Psikologi & Self-Assessment' : 'Psychological Tests & Self-Assessment'}
-			</h1>
-			<p class="text-gray-600 dark:text-gray-300">
-				{language === 'id' 
-					? 'Tes singkat berbasis sains untuk mendeteksi gejala kecemasan, depresi, burnout, dsb.' 
-					: 'Brief science-based tests to detect symptoms of anxiety, depression, burnout, etc.'}
-			</p>
-		</div>
+<div class="space-y-10 py-6 animate-in fade-in duration-700">
+	<!-- Header -->
+	<header class="text-center space-y-4">
+		<h1 class="text-4xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-500 tracking-tighter uppercase italic drop-shadow-sm">
+			{getTranslation('title')}
+		</h1>
+		<p class="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-300 max-w-2xl mx-auto italic leading-relaxed">
+			"{getTranslation('subtitle')}"
+		</p>
+	</header>
 
-		{#if !showHistory}
-			<!-- Assessment Selection -->
-			<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-purple-200/50 dark:border-gray-700">
-				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-						{language === 'id' ? 'Pilih Tes' : 'Select a Test'}
-					</h2>
+	{#if !showHistory}
+		<!-- Main Selection Grid -->
+		<section class="bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-8 md:p-12 border border-white/60 dark:border-white/10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-700">
+			<div class="flex flex-col md:flex-row justify-between items-center gap-6">
+				<h2 class="text-2xl font-black uppercase tracking-widest text-orange-500 dark:text-orange-400">
+					{getTranslation('select')}
+				</h2>
+				<button 
+					onclick={toggleHistory}
+					class="w-full md:w-auto px-8 py-3 bg-white/80 dark:bg-white/5 border border-orange-200 dark:border-orange-900 rounded-2xl font-black text-xs uppercase tracking-widest text-orange-600 dark:text-orange-400 hover:bg-orange-600 hover:text-white transition-all shadow-lg active:scale-95"
+				>
+					{getTranslation('history')} 🕰️
+				</button>
+			</div>
+
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+				{#each getAssessments() as assessment}
 					<button 
-						on:click={toggleHistory}
-						class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg transition-colors"
+						onclick={() => startAssessment(assessment)}
+						class="group relative overflow-hidden bg-white/60 dark:bg-white/5 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/80 dark:border-white/10 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 text-left"
 					>
-						{language === 'id' ? 'Riwayat' : 'History'}
+						<div class="absolute -right-6 -bottom-6 text-9xl opacity-10 group-hover:scale-125 transition-transform duration-700">
+							{assessment.icon}
+						</div>
+						<div class="relative z-10 flex flex-col h-full">
+							<div class="text-5xl mb-6 group-hover:scale-110 transition-transform origin-left">{assessment.icon}</div>
+							<h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2 tracking-tight group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors italic uppercase">
+								{assessment.title}
+							</h3>
+							<p class="text-sm font-bold text-gray-600 dark:text-gray-400 italic">
+								{assessment.description}
+							</p>
+						</div>
+					</button>
+				{/each}
+			</div>
+		</section>
+	{:else}
+		<!-- History View -->
+		<section class="bg-white/30 dark:bg-black/40 backdrop-blur-2xl rounded-[3rem] p-8 md:p-12 border border-white/60 dark:border-white/10 shadow-2xl space-y-8 animate-in slide-in-from-right-8 duration-700">
+			<div class="flex flex-col md:flex-row justify-between items-center gap-6">
+				<h2 class="text-2xl font-black uppercase tracking-widest text-red-500">
+					{getTranslation('history')}
+				</h2>
+				<div class="flex w-full md:w-auto gap-3">
+					<button 
+						onclick={clearHistory}
+						class="flex-1 md:flex-none px-6 py-3 bg-red-500/10 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-600 hover:text-white transition-all border border-red-500/20"
+						disabled={assessmentHistory.length === 0}
+					>
+						{getTranslation('clear')} 🧨
+					</button>
+					<button 
+						onclick={toggleHistory}
+						class="flex-1 md:flex-none px-6 py-3 bg-gray-500/10 text-gray-600 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-gray-600 hover:text-white transition-all border border-gray-500/20"
+					>
+						{getTranslation('back')} 🔙
 					</button>
 				</div>
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-					{#each getAssessments() as assessment}
-						<div 
-							class="bg-white dark:bg-gray-700 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-center text-center"
-							role="button"
-							aria-label="{assessment.title}"
-							on:click={() => startAssessment(assessment)}
-						>
-							<div class="text-3xl mb-2">{assessment.icon}</div>
-							<h3 class="font-semibold text-gray-900 dark:text-white">{assessment.title}</h3>
-							<p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{assessment.description}</p>
+			</div>
+			
+			{#if assessmentHistory.length === 0}
+				<div class="text-center py-20 bg-white/20 dark:bg-black/10 rounded-[2.5rem] border-2 border-dashed border-white/40 dark:border-white/5">
+					<div class="text-[8rem] mb-6 opacity-20">📭</div>
+					<p class="text-xl font-bold text-gray-500 italic max-w-xs mx-auto">
+						{getTranslation('empty')}
+					</p>
+				</div>
+			{:else}
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+					{#each assessmentHistory as entry}
+						<div class="bg-white/80 dark:bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/50 dark:border-white/10 shadow-lg flex flex-col justify-between group">
+							<div class="flex justify-between items-start mb-4">
+								<div class="flex items-center gap-4">
+									<div class="text-4xl group-hover:scale-125 transition-transform">{entry.assessmentIcon}</div>
+									<div>
+										<h4 class="text-lg font-black text-gray-900 dark:text-white uppercase italic leading-none">{entry.assessmentTitle}</h4>
+										<p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+											{formatDate(entry.timestamp)}
+										</p>
+									</div>
+								</div>
+								<div class="text-3xl font-black text-orange-600 dark:text-orange-400 italic">
+									{entry.totalScore}
+								</div>
+							</div>
+							<div class="mt-2 p-3 bg-white/50 dark:bg-black/20 rounded-2xl border border-white/50 dark:border-white/5">
+								<p class="text-xs font-black text-purple-600 dark:text-cyan-400 uppercase tracking-widest mb-1">Interpretation:</p>
+								<p class="text-sm font-bold text-gray-700 dark:text-gray-300 italic">"{entry.interpretation}"</p>
+							</div>
 						</div>
 					{/each}
 				</div>
-			</div>
-		{:else}
-			<!-- Assessment History -->
-			<div class="bg-white/70 backdrop-blur-sm dark:bg-gray-800/70 rounded-lg shadow-lg p-6 border border-purple-200/50 dark:border-gray-700">
-				<div class="flex justify-between items-center mb-4">
-					<h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-						{language === 'id' ? 'Riwayat Tes' : 'Test History'}
-					</h2>
-					<div class="flex gap-2">
-						<button 
-							on:click={clearHistory}
-							class="text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg transition-colors"
-							disabled={assessmentHistory.length === 0}
-						>
-							{language === 'id' ? 'Hapus Semua' : 'Clear All'}
-						</button>
-						<button 
-							on:click={toggleHistory}
-							class="text-sm bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-lg transition-colors"
-						>
-							{language === 'id' ? 'Kembali' : 'Back'}
-						</button>
-					</div>
-				</div>
-				
-				{#if assessmentHistory.length === 0}
-					<div class="text-center py-8 text-gray-500 dark:text-gray-400">
-						<div class="text-5xl mb-4">📋</div>
-						<p>{language === 'id' ? 'Belum ada riwayat tes' : 'No test history yet'}</p>
-					</div>
-				{:else}
-					<div class="space-y-4 max-h-96 overflow-y-auto">
-						{#each assessmentHistory as historyEntry}
-							<div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
-								<div class="flex justify-between items-start">
-									<div class="flex items-center space-x-3">
-										<div class="text-2xl">{historyEntry.assessmentIcon}</div>
-										<div>
-											<h3 class="font-semibold text-gray-900 dark:text-white">{historyEntry.assessmentTitle}</h3>
-											<p class="text-sm text-gray-600 dark:text-gray-300">
-												{formatDate(historyEntry.timestamp)}
-											</p>
-										</div>
-									</div>
-									<div class="text-right">
-										<div class="text-lg font-bold text-blue-600 dark:text-blue-400">
-											{historyEntry.totalScore}
-										</div>
-										<div class="text-sm text-gray-600 dark:text-gray-300">
-											{historyEntry.interpretation}
-										</div>
-									</div>
-								</div>
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
-		{/if}
+			{/if}
+		</section>
+	{/if}
 
-		<!-- Information Section -->
-		<div class="bg-gradient-to-r from-pink-100/80 to-purple-100/80 backdrop-blur-sm dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-6 text-center border border-pink-200/50 dark:border-blue-800 shadow-lg">
-			<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-				{language === 'id' ? 'Penting untuk Diingat' : 'Important to Remember'}
+	<!-- Important Context -->
+	<section class="bg-gradient-to-r from-red-500/10 to-orange-500/10 backdrop-blur-2xl border border-red-500/20 rounded-[3rem] p-10 relative overflow-hidden group">
+		<div class="absolute -right-4 -bottom-4 text-9xl opacity-5 group-hover:scale-110 transition-transform">🗣️</div>
+		<div class="relative z-10 text-center space-y-4">
+			<h3 class="text-xs font-black uppercase tracking-[0.5em] text-red-600 dark:text-red-400">
+				{getTranslation('infoTitle')}
 			</h3>
-			<p class="text-gray-700 dark:text-gray-200">
-				{language === 'id' 
-					? 'Tes ini hanya untuk tujuan edukasi dan tidak menggantikan diagnosis profesional. Jika Anda mengalami gejala yang serius, segera hubungi profesional kesehatan mental.' 
-					: 'This test is for educational purposes only and does not replace professional diagnosis. If you are experiencing serious symptoms, please contact a mental health professional immediately.'}
+			<p class="text-base md:text-lg font-bold text-gray-700 dark:text-gray-300 italic leading-relaxed max-w-3xl mx-auto">
+				"{getTranslation('infoText')}"
 			</p>
 		</div>
-	</div>
+	</section>
 </div>
+
+<style>
+	:global(.custom-scrollbar::-webkit-scrollbar) {
+		width: 6px;
+	}
+	:global(.custom-scrollbar::-webkit-scrollbar-track) {
+		background: transparent;
+	}
+	:global(.custom-scrollbar::-webkit-scrollbar-thumb) {
+		background: rgba(128, 128, 128, 0.2);
+		border-radius: 10px;
+	}
+	:global(.custom-scrollbar::-webkit-scrollbar-thumb:hover) {
+		background: rgba(128, 128, 128, 0.4);
+	}
+</style>
